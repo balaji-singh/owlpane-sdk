@@ -13,10 +13,12 @@ After release, verify spans in the Owlpane console using **published** SDK artif
 | [`pii-canary`](pii-canary) | full Node SDK (PII scrub test) | `./run.sh` |
 
 ```bash
-cp .env.console.example .env   # ingest URL + owl_ing_ key from console
+cp .env.console.example .env   # or rely on auto-load from owlpane/api/apps/api/.env
 chmod +x run-console.sh sdk-*/run-console.sh
 ./run-console.sh               # all sdk-* samples
 ```
+
+**Node** installs the **published** package `@balaji-singh/owlpane-node` from GitHub Packages. That registry always requires auth (`read:packages`): run `gh auth refresh -h github.com -s read:packages` once, or set `GITHUB_PACKAGES_TOKEN`. Use `OWLPANE_SDK_SOURCE=local` only to test unpublished `packages/node` changes.
 
 ## Plain OpenTelemetry samples (CI / no Owlpane SDK)
 

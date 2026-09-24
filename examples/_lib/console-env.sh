@@ -8,14 +8,20 @@ if [ -f "$ROOT/.env" ]; then
   source "$ROOT/.env"
   set +a
 fi
+API_ENV="${ROOT}/../../api/apps/api/.env"
+if [[ "${OWLPANE_INGEST_KEY:-}" == *your_project_key* ]] || [[ "${OWLPANE_INGEST_KEY:-}" == *REPLACE_WITH* ]] || ! [[ "${OWLPANE_INGEST_KEY:-}" =~ ^owl_ing_[a-f0-9]{48}$ ]]; then
+  if [ -f "$API_ENV" ]; then
+    # shellcheck disable=SC1090
+    set -a && source "$API_ENV" && set +a
+    echo "Using OWLPANE_INGEST_KEY from ${API_ENV}" >&2
+  fi
+fi
 if [ -z "${OWLPANE_INGEST_KEY:-}" ]; then
   echo "Missing OWLPANE_INGEST_KEY. Copy examples/.env.console.example to examples/.env" >&2
   exit 1
 fi
-if [[ "${OWLPANE_INGEST_KEY}" == *your_project_key* ]] || ! [[ "${OWLPANE_INGEST_KEY}" =~ ^owl_ing_[a-f0-9]{48}$ ]]; then
-  echo "Invalid OWLPANE_INGEST_KEY in examples/.env." >&2
-  echo "Copy the project ingest key from Owlpane console (format: owl_ing_ + 48 hex chars)." >&2
-  echo "Local API dev often has OWLPANE_INGEST_KEY in owlpane/api/apps/api/.env" >&2
+if ! [[ "${OWLPANE_INGEST_KEY}" =~ ^owl_ing_[a-f0-9]{48}$ ]]; then
+  echo "Invalid OWLPANE_INGEST_KEY (need owl_ing_ + 48 hex from console or api .env)." >&2
   exit 1
 fi
 ENDPOINT="${OWLPANE_INGEST_URL:-${OWLPANE_ENDPOINT:-}}"
