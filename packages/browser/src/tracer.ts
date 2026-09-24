@@ -2,7 +2,7 @@ import type { Env } from "./env.js";
 import { RandomBytes, defaultRandomBytes, newSpanId, newTraceId } from "./ids.js";
 import type { Attrs, SpanData, SpanEvent } from "./otlp.js";
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.2";
 
 export type ResolvedOptions = {
   endpoint: string;
@@ -26,7 +26,7 @@ export type ActiveSpan = {
 /** Creates spans, stamps the attributes every RUM span carries, and hands finished spans to `emit`. */
 export type Tracer = ReturnType<typeof createTracer>;
 
-export function createTracer(env: Env, opts: ResolvedOptions, emit: (s: SpanData) => void, sessionId: string, pageUrl: () => { url: string; path: string }) {
+export function createTracer(env: Env, opts: ResolvedOptions, emit: (s: SpanData) => void, sessionId: string, pageUrl: () => { url: string; path: string }, pageAttrs: Attrs = {}) {
   const rand: RandomBytes = env.randomBytes ?? defaultRandomBytes();
   const nav = env.navigator;
 
@@ -41,6 +41,7 @@ export function createTracer(env: Env, opts: ResolvedOptions, emit: (s: SpanData
       "browser.language": nav?.language,
       "browser.platform": nav?.userAgentData?.platform ?? nav?.platform,
       "browser.mobile": nav?.userAgentData?.mobile,
+      ...pageAttrs,
     };
   }
 

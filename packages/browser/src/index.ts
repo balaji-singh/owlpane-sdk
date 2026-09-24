@@ -34,13 +34,24 @@ export type OwlpaneBrowser = {
   flush(): Promise<void>;
   shutdown(): Promise<void>;
   captureException(error: unknown): void;
+  /** Stamps `owlpane.experiment.id` on spans that end after this call. */
+  setExperiment(id: string, variant?: string): void;
+  /** Stamps `feature_flag.key` on spans that end after this call. */
+  setFeatureFlag(key: string, variant?: string): void;
 };
 
 export const DEFAULT_ENDPOINT = "https://ingest.owlpane.com";
 
 let active: OwlpaneBrowser | undefined;
 
-const NOOP: OwlpaneBrowser = { sessionId: "", flush: async () => undefined, shutdown: async () => undefined, captureException: () => undefined };
+const NOOP: OwlpaneBrowser = {
+  sessionId: "",
+  flush: async () => undefined,
+  shutdown: async () => undefined,
+  captureException: () => undefined,
+  setExperiment: () => undefined,
+  setFeatureFlag: () => undefined,
+};
 
 function sessionIdFor(env: Env, rand: (n: number) => Uint8Array): string {
   const K = "owlpane.sid";
@@ -80,6 +91,7 @@ export function init(options: OwlpaneBrowserOptions): OwlpaneBrowser {
     const originalFetch = env.fetch; // captured BEFORE patching: exports must not be instrumented
     const rand = env.randomBytes ?? defaultRandomBytes();
     const sessionId = sessionIdFor(env, rand);
+    const pageAttrs: Record<string, string> = {};
 
     const resource = {
       "service.name": opts.serviceName,
@@ -105,7 +117,7 @@ export function init(options: OwlpaneBrowserOptions): OwlpaneBrowser {
       const href = env.location?.href ?? "";
       return { url: sanitizeUrl(href, undefined, opts.keepQuery), path: urlPath(href, undefined) };
     };
-    const tracer = createTracer(env, opts, (s) => exporter.enqueue(s), sessionId, pageUrl);
+    const tracer = createTracer(env, opts, (s) => exporter.enqueue(s), sessionId, pageUrl, pageAttrs);
     const isOwnUrl = (abs: string) => abs.startsWith(opts.endpoint + "/") || abs === opts.endpoint;
 
     // One trace per page view: 'documentLoad' is its root; vitals and errors hang off it.
@@ -145,6 +157,18 @@ export function init(options: OwlpaneBrowserOptions): OwlpaneBrowser {
       sessionId,
       flush: () => exporter.flush(),
       captureException: (e) => report(e, "manual"),
+      setExperiment(id, variant) {
+        const key = id.trim();
+        if (!key) return;
+        pageAttrs["owlpane.experiment.id"] = key;
+        if (variant?.trim()) pageAttrs["owlpane.experiment.variant"] = variant.trim();
+      },
+      setFeatureFlag(key, variant) {
+        const name = key.trim();
+        if (!name) return;
+        pageAttrs["feature_flag.key"] = name;
+        if (variant?.trim()) pageAttrs["feature_flag.result.variant"] = variant.trim();
+      },
       async shutdown() {
         stopDomReplay?.();
         undo.forEach((u) => u());

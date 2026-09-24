@@ -1,6 +1,6 @@
 import { Attrs, encodeAttrs, unixNano } from "./otlp.js";
 
-const REPLAY_SCOPE = { name: "@owlpane/browser-replay", version: "0.1.0" };
+const REPLAY_SCOPE = { name: "@owlpane/browser-replay", version: "0.1.2" };
 
 export function buildLogsRequestBody(
   resourceAttrs: Attrs,

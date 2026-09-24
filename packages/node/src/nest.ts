@@ -10,7 +10,7 @@ import type {
   ExecutionContext,
   NestInterceptor,
 } from "@nestjs/common";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, Module } from "@nestjs/common";
 import type { Observable } from "rxjs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -18,6 +18,14 @@ import "reflect-metadata";
 import { job, setUser, traceUserProfileEnabled, type JobKind } from "./index";
 
 const logger = new Logger("OwlpaneNest");
+
+/** Registers Nest job tracing. Call `owlpane.start()` before the application module is created. */
+@Module({})
+export class OwlpaneModule {
+  constructor() {
+    installNestJobTracing();
+  }
+}
 
 /** Load a peer from the host app (BFF), not from @owlpane/node's copy — otherwise monkey-patches miss. */
 function requireFromHost<T = unknown>(specifier: string): T {

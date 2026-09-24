@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.owlpane</groupId>
   <artifactId>owlpane-java</artifactId>
-  <version>0.1.1</version>
+  <version>0.1.2</version>
   <packaging>jar</packaging>
   <name>owlpane-java</name>
   <description>Thin Owlpane env bootstrap for OpenTelemetry Java (use with the OTel agent).</description>

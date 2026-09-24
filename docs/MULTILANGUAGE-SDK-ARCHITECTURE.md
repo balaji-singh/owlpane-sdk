@@ -107,7 +107,7 @@ Each thin package does **only**:
 
 ### Tier C — Docs-only (until generated package ships)
 
-`examples/go`, `examples/java`, `examples/python` + `run.sh` (already exist). Console install guide reads schema JSON.
+`examples/apps/*` (dogfood, published SDKs) and `examples/conformance/*` (local receiver). Console install guide reads schema JSON.
 
 ---
 

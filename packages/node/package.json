@@ -1,6 +1,6 @@
 {
   "name": "@owlpane/node",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Owlpane telemetry SDK for Node.js: one-line OpenTelemetry setup, job tracing, and user tagging. Optional NestJS helpers at @owlpane/node/nest.",
   "license": "MIT",
   "repository": {
@@ -32,7 +32,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test --import tsx test/export.test.ts"
+    "test": "node --test --import tsx test/*.test.ts"
   },
   "dependencies": {
     "@opentelemetry/auto-instrumentations-node": "^0.80.0",

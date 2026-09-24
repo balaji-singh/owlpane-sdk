@@ -1,40 +1,44 @@
-# SDK examples
+# SDK dogfood examples
 
-## Console check (published packages + local ingest)
+Minimal **one-shot apps** that install the **published** Owlpane SDK (or plain OpenTelemetry where the thin SDK is env-only) and send a single **Server** span to your ingest gateway. Use them to dogfood the SaaS the same way customers onboard.
 
-After release, verify spans in the Owlpane console using **published** SDK artifacts (or monorepo sources with `OWLPANE_SDK_SOURCE=local`):
+## Standard onboarding (one project per app)
 
-| Sample | Package / JAR | Run |
-|--------|----------------|-----|
-| [`sdk-node`](sdk-node) | `@balaji-singh/owlpane-node` (GitHub Packages) | `./run-console.sh` |
-| [`sdk-go`](sdk-go) | `github.com/balaji-singh/owlpane-sdk/packages/go` | `./run-console.sh` |
-| [`sdk-python`](sdk-python) | `owlpane` (PyPI) | `./run-console.sh` |
-| [`sdk-java`](sdk-java) | OTel **javaagent** JAR + env | `./run-console.sh` |
-| [`pii-canary`](pii-canary) | full Node SDK (PII scrub test) | `./run.sh` |
+In the console, create **five projects** (names must match `dogfood.manifest.json`):
+
+| Console project | Example app | Package / path |
+|-----------------|-------------|----------------|
+| `owlpane-sdk-node` | [`apps/node`](apps/node) | `@balaji-singh/owlpane-node@0.1.2` (GitHub Packages npm) |
+| `owlpane-sdk-go` | [`apps/go`](apps/go) | `github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.1` |
+| `owlpane-sdk-python` | [`apps/python`](apps/python) | `owlpane==0.1.2` (PyPI) |
+| `owlpane-sdk-java` | [`apps/java`](apps/java) | OpenTelemetry **javaagent** + `OTEL_*` env |
+| `owlpane-sdk-ruby` | [`apps/ruby`](apps/ruby) | `opentelemetry-sdk` + OTLP exporter |
+
+Each project gets its **own ingest key**. `OTEL_SERVICE_NAME` is set to the project slug (same rule as **InstallGuide** in the console).
 
 ```bash
-cp .env.console.example .env   # or rely on auto-load from owlpane/api/apps/api/.env
-chmod +x run-console.sh sdk-*/run-console.sh
-./run-console.sh               # all sdk-* samples
+chmod +x run-dogfood.sh scripts/onboard-dogfood.sh apps/*/run.sh
+# Creates five console projects + keys (Scale org by default), writes examples/.env:
+./scripts/onboard-dogfood.sh --write-env
+./run-dogfood.sh
 ```
 
-**Node** installs the **published** package `@balaji-singh/owlpane-node` from GitHub Packages. That registry always requires auth (`read:packages`): run `gh auth refresh -h github.com -s read:packages` once, or set `GITHUB_PACKAGES_TOKEN`. Use `OWLPANE_SDK_SOURCE=local` only to test unpublished `packages/node` changes.
+Uses the same API as **+ New project** (`POST /v1/orgs/:id/projects`). Override with `OWLPANE_ONBOARD_EMAIL`, `OWLPANE_ONBOARD_PASSWORD`, `OWLPANE_ORG_SLUG` (default `scale@owlpane.test` / `owlpane` / `scale`).
 
-## Plain OpenTelemetry samples (CI / no Owlpane SDK)
+**Auth for Node:** `gh auth refresh -h github.com -s read:packages` (or set `GITHUB_PACKAGES_TOKEN`).
 
-Tiny programs that emit one span using only the upstream OpenTelemetry SDK or agent, configured purely
-by environment variables as described in [docs/reference/opentelemetry-any-language.md](../docs/reference/opentelemetry-any-language.md).
+**Console:** Applications → Python / Java / Node.js, deploy env **development**, last hour — or **Traces** with `service.name` `owlpane-sdk-*`.
 
-Each `run.sh` starts a throwaway receiver ([`_receiver/receiver.mjs`](_receiver/receiver.mjs), Node, listens
-on 127.0.0.1 on a random port, forwards nothing), runs the sample against it with the placeholder key
-`owl_ing_test_local_key`, and exits 0 only if the receiver saw a decodable `POST /v1/traces` with a
-`Bearer owl_ing_` header, the right `service.name` and the expected span. They never contact a real endpoint.
+For a quick smoke test only, you may set a single `OWLPANE_INGEST_KEY` (all apps share one project); the runner prints a warning.
 
-| Sample | Needs | Run |
-|---|---|---|
-| [`python`](python) | python3, node, network for pip | `python/run.sh` |
-| [`go`](go) | go, node, network for modules | `go/run.sh` |
-| [`java`](java) | JDK 17+, node, network for the agent and API jars | `java/run.sh` |
+## Other samples
 
-There is no .NET sample: no .NET SDK was available, so that guide is marked Partial and untested.
-Setting `HEADERS_VALUE='Authorization=Bearer owl_ing_test_local_key'` runs the literal-space header form.
+| Path | Purpose |
+|------|---------|
+| [`conformance/`](conformance/) | Plain OTel samples + `_receiver` for CI/docs (no real ingest) |
+| [`pii-canary/`](pii-canary/) | PII scrub verification against a live ingest |
+| [`_receiver/`](_receiver/) | Throwaway OTLP receiver used by package conformance tests |
+
+## Monorepo developers
+
+Examples always use **remote** artifacts (`OWLPANE_SDK_SOURCE=published`). To test unreleased SDK changes, work in `packages/*` conformance scripts (`npm test`) or temporarily point an app at a local path in a branch — do not commit local `file:` / `replace` overrides here.

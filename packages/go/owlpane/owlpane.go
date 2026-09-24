@@ -62,10 +62,13 @@ func Start(ctx context.Context, cfg *Config) (ShutdownFunc, error) {
 	}
 
 	res, err := resource.New(ctx,
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
 		resource.WithAttributes(
 			semconv.ServiceName(cfg.ServiceName),
 			semconv.ServiceVersion(cfg.Version),
 			attribute.String("deployment.environment.name", cfg.Environment),
+			semconv.TelemetrySDKLanguageGo,
 		),
 	)
 	if err != nil {
@@ -159,6 +162,16 @@ func EmitTestSpan(ctx context.Context, spanName string) error {
 		return errors.New("owlpane not enabled")
 	}
 	_, span := otel.Tracer("owlpane").Start(ctx, spanName)
+	defer span.End()
+	return nil
+}
+
+// EmitConsoleDemoSpan sends a Server span so Owlpane runtime dashboards (RED) can classify the app.
+func EmitConsoleDemoSpan(ctx context.Context) error {
+	if !enabled {
+		return errors.New("owlpane not enabled")
+	}
+	_, span := otel.Tracer("owlpane").Start(ctx, "GET /demo", trace.WithSpanKind(trace.SpanKindServer))
 	defer span.End()
 	return nil
 }

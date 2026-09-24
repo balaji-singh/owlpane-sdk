@@ -20,7 +20,9 @@ init({
 
 Script tag: `npm run build:iife -w @owlpane/browser` produces `dist/owlpane-browser.iife.js` (global `OwlpaneBrowser`). It uses `esbuild`, which is not a dependency of this package; it must be present in the workspace `node_modules`.
 
-`init()` never throws, is a no-op if called twice, and returns `{ sessionId, flush(), shutdown(), captureException(err) }`.
+`init()` never throws, is a no-op if called twice, and returns `{ sessionId, flush(), shutdown(), captureException(err), setExperiment(id), setFeatureFlag(key) }`.
+
+`setExperiment("checkout", "b")` stamps `owlpane.experiment.id` on spans that end afterwards (Experiments). `setFeatureFlag("new-nav", "on")` stamps `feature_flag.key` (Feature flags). A browser page is not a mobile app: this SDK does not set `os.name` to iOS or Android.
 
 ## What it captures
 

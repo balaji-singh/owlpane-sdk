@@ -24,6 +24,9 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
 } from "@opentelemetry/semantic-conventions";
+import { serviceCatalogAttributes, mobileResource, setExperiment, setFeatureFlag, testCase, pipeline, recordFinding, FINDING_KINDS } from "./signals";
+export { mobileResource, setExperiment, setFeatureFlag, testCase, pipeline, recordFinding, FINDING_KINDS };
+export type { FindingKind, MobilePlatform } from "./signals";
 
 const { BatchSpanProcessor, ParentBasedSampler, TraceIdRatioBasedSampler } =
   tracing;
@@ -42,6 +45,10 @@ export type InitOptions = {
   release?: string;
   /** Trace sample ratio 0–1. */
   sampleRatio?: number;
+  /** `service.owner`. Shown on the service catalog when set. */
+  owner?: string;
+  /** `vcs.repository.url.full`. Shown on the service catalog when set. */
+  repository?: string;
   /** Extra resource attributes merged in alongside service/version/environment. */
   resourceAttributes?: Record<string, string>;
   /** Auto-instrumentation names to turn off, e.g. ["@opentelemetry/instrumentation-fs"]. */
@@ -121,6 +128,7 @@ export function start(options: InitOptions = {}): void {
     [ATTR_SERVICE_NAME]: serviceName,
     [ATTR_SERVICE_VERSION]: version,
     "deployment.environment.name": environment,
+    ...serviceCatalogAttributes(options.owner, options.repository),
     ...options.resourceAttributes,
   });
 
@@ -297,4 +305,16 @@ function registerProcessMetrics(meterName: string): void {
     .addCallback((result) => result.observe(process.memoryUsage().rss));
 }
 
-export const owlpane = { start, shutdown, job, setUser, isEnabled };
+export const owlpane = {
+  start,
+  shutdown,
+  job,
+  setUser,
+  isEnabled,
+  setExperiment,
+  setFeatureFlag,
+  testCase,
+  pipeline,
+  recordFinding,
+  mobileResource,
+};

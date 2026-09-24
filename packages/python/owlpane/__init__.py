@@ -40,6 +40,7 @@ def start(cfg: Optional[Config] = None) -> Optional[Callable[[], None]]:
             "service.name": cfg.service_name,
             "service.version": cfg.version,
             "deployment.environment.name": cfg.environment,
+            "telemetry.sdk.language": "python",
         }
     )
     sampler = ParentBasedTraceIdRatio(cfg.sample_ratio)
@@ -67,4 +68,13 @@ def emit_test_span(name: str) -> None:
         raise RuntimeError("owlpane not enabled")
     tracer = trace.get_tracer("owlpane")
     with tracer.start_as_current_span(name):
+        pass
+
+
+def emit_console_demo_span() -> None:
+    """Server span for Owlpane Applications → runtime RED boards."""
+    if not _enabled:
+        raise RuntimeError("owlpane not enabled")
+    tracer = trace.get_tracer("owlpane")
+    with tracer.start_as_current_span("GET /demo", kind=trace.SpanKind.SERVER):
         pass

@@ -255,6 +255,20 @@ test("sampleRate 0 exports nothing but still forwards traceparent unsampled", as
   assert.equal(parseTraceparent(new Headers(h.calls[0].init.headers).get("traceparent")!)!.sampled, false);
 });
 
+test("setExperiment and setFeatureFlag land on spans that end afterwards", async () => {
+  const h = make();
+  const rum = start(h);
+  rum.setExperiment("checkout", "b");
+  rum.setFeatureFlag("new-nav", "on");
+  await h.g.fetch("/api/orders");
+  await rum.flush();
+  const span = exported(h).find((s) => s.kind === 3);
+  assert.equal(span.attrs["owlpane.experiment.id"], "checkout");
+  assert.equal(span.attrs["owlpane.experiment.variant"], "b");
+  assert.equal(span.attrs["feature_flag.key"], "new-nav");
+  assert.equal(span.attrs["feature_flag.result.variant"], "on");
+});
+
 test("init never throws on a hostile environment", () => {
   const bad = { ...make().env, addEventListener: () => { throw new Error("x"); }, PerformanceObserver: class { constructor() { throw new Error("no"); } } } as unknown as Env;
   assert.doesNotThrow(() => init({ projectKey: "k", serviceName: "s", env: bad }));
