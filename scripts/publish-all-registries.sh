@@ -42,9 +42,22 @@ else
   echo "::warning::PYPI_API_TOKEN unset — skipping pypi.org"
 fi
 
-if ! (cd packages/java && mvn -q -s "${ROOT}/.github/maven/settings-ci.xml" test package deploy); then
+MAVEN_SETTINGS="$(mktemp)"
+cat > "${MAVEN_SETTINGS}" <<EOF
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <servers>
+    <server>
+      <id>github</id>
+      <username>x-access-token</username>
+      <password>${TOKEN}</password>
+    </server>
+  </servers>
+</settings>
+EOF
+if ! (cd packages/java && mvn -q -s "${MAVEN_SETTINGS}" test package deploy); then
   FAILED+=("maven")
 fi
+rm -f "${MAVEN_SETTINGS}"
 
 if ! (
   cd packages/ruby
