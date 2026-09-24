@@ -17,5 +17,6 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: git diff --exit-code packages/go/owlpane/zz_generated_env.go packages/python/owlpane/_generated_config.py schema/install-snippets.json
+      - run: node scripts/verify-versions.mjs
       - run: npm test
       - run: npm run build

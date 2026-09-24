@@ -1,7 +1,11 @@
 name: Publish SDK
-# Publishes @owlpane/node and @owlpane/browser to npm with provenance.
-# Tag sdk-v0.1.0 matches packages/node and packages/browser version fields.
-# Needs an NPM_TOKEN repository secret (automation token for the @owlpane scope).
+# Multi-language release on tag sdk-v* (or workflow_dispatch on that tag):
+#   npm: @owlpane/node, @owlpane/browser
+#   PyPI: owlpane
+#   Go: module tag packages/go/v* (go get github.com/balaji-singh/owlpane-sdk/packages/go@<version>)
+# Java / Ruby / .NET thin libraries are not published yet (env-only in schema/install-snippets.json).
+#
+# Secrets: NPM_TOKEN, PYPI_API_TOKEN (pypi.org — use project token for package "owlpane")
 on:
   push:
     tags: ["sdk-v*"]
@@ -9,14 +13,16 @@ on:
 permissions:
   contents: write
   packages: write
-  id-token: write   # provenance attestation (npmjs.com)
+  id-token: write
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { persist-credentials: false }
+        with:
+          fetch-depth: 0
+          persist-credentials: true
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with: { node-version: 20, registry-url: "https://registry.npmjs.org", cache: npm }
       - uses: actions/setup-go@v5
@@ -28,22 +34,24 @@ jobs:
       - run: git diff --exit-code packages/go/owlpane/zz_generated_env.go packages/python/owlpane/_generated_config.py schema/install-snippets.json
       - run: npm run build
       - run: npm test
-      - name: Refuse to publish a version that does not match the tag
-        run: |
-          set -euo pipefail
-          node_version="$(node -p "require('./packages/node/package.json').version")"
-          browser_version="$(node -p "require('./packages/browser/package.json').version")"
-          test "$node_version" = "$browser_version"
-          test "sdk-v${node_version}" = "${GITHUB_REF_NAME}"
-      - name: Require NPM_TOKEN (npmjs.com publish)
+      - name: Align release version with sdk-v* tag
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: node scripts/verify-versions.mjs
+      - name: Require NPM_TOKEN
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           if [ -z "${NPM_TOKEN}" ]; then
-            echo "::error::NPM_TOKEN is not set on this repository."
-            echo "Add an npm automation token at Settings → Secrets → Actions → NPM_TOKEN,"
-            echo "then re-run this workflow or push tag sdk-v<version> again."
-            echo "GitHub Packages fallback was removed: GITHUB_TOKEN often lacks write_package (403)."
+            echo "::error::NPM_TOKEN is not set. Add an npm automation token for the @owlpane scope."
+            exit 1
+          fi
+      - name: Require PYPI_API_TOKEN
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "${PYPI_API_TOKEN}" ]; then
+            echo "::error::PYPI_API_TOKEN is not set. Create a PyPI token for package owlpane and add it as a repo secret."
             exit 1
           fi
       - name: Publish @owlpane/node and @owlpane/browser to npmjs.com
@@ -53,3 +61,52 @@ jobs:
           set -euo pipefail
           npm publish -w @owlpane/node --provenance --access public
           npm publish -w @owlpane/browser --provenance --access public
+      - name: Publish owlpane to PyPI
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip build twine
+          cd packages/python
+          python -m build
+          twine upload dist/* --non-interactive --skip-existing \
+            -u __token__ -p "${PYPI_API_TOKEN}"
+      - name: Push Go module semver tag
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./packages/node/package.json').version")"
+          GO_TAG="packages/go/v${VERSION}"
+          if git rev-parse "${GO_TAG}" >/dev/null 2>&1; then
+            echo "Go tag ${GO_TAG} already exists; skipping"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${GO_TAG}" -m "Go module release v${VERSION}"
+          git push origin "${GO_TAG}"
+      - name: Update GitHub release notes (install matrix)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./packages/node/package.json').version")"
+          TAG="sdk-v${VERSION}"
+          BODY="$(cat <<EOF
+          ## Install (v${VERSION})
+
+          | Language | Install |
+          |----------|---------|
+          | Node | \`npm install @owlpane/node@${VERSION}\` |
+          | Browser | \`npm install @owlpane/browser@${VERSION}\` |
+          | Python | \`pip install owlpane==${VERSION}\` |
+          | Go | \`go get github.com/balaji-singh/owlpane-sdk/packages/go@v${VERSION}\` |
+          | Java / Ruby / .NET | Env + OTel agent only for now — see \`schema/install-snippets.json\` |
+
+          CI runs codegen, build, and tests for Go/Python before any registry upload.
+          EOF
+          )"
+          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --notes "${BODY}"
+          else
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "SDK v${VERSION}" --notes "${BODY}"
+          fi

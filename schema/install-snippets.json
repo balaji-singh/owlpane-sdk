@@ -1,7 +1,8 @@
 {
   "version": 1,
   "go": {
-    "module": "github.com/owlpane/owlpane-go/owlpane",
+    "module": "github.com/balaji-singh/owlpane-sdk/packages/go/owlpane",
+    "goGet": "go get github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.1",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
       "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
@@ -9,11 +10,11 @@
       "OTEL_SERVICE_NAME=my-service",
       "OWLPANE_ENVIRONMENT=production"
     ],
-    "code": "import \"github.com/owlpane/owlpane-go/owlpane\"\n\nshutdown, err := owlpane.Start(context.Background(), nil)\n// … app …\n_ = shutdown(context.Background())"
+    "code": "import \"github.com/balaji-singh/owlpane-sdk/packages/go/owlpane\"\n\nshutdown, err := owlpane.Start(context.Background(), nil)\n// … app …\n_ = shutdown(context.Background())"
   },
   "python": {
     "package": "owlpane",
-    "pip": "pip install -e packages/python",
+    "pip": "pip install owlpane==0.1.1",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
       "OWLPANE_INGEST_KEY=owl_ing_…",
@@ -23,6 +24,31 @@
   },
   "node": {
     "package": "@owlpane/node",
+    "npm": "npm install @owlpane/node@0.1.1",
     "note": "Hand-written full SDK in packages/node"
+  },
+  "browser": {
+    "package": "@owlpane/browser",
+    "npm": "npm install @owlpane/browser@0.1.1"
+  },
+  "java": {
+    "status": "env-only",
+    "maven": "com.owlpane:owlpane-java (thin starter — not on Maven Central yet)",
+    "env": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+      "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
+      "OWLPANE_INGEST_KEY=owl_ing_…",
+      "OTEL_SERVICE_NAME=my-service"
+    ],
+    "note": "Use OpenTelemetry Java agent + env; owlpane-java library ships in a later release."
+  },
+  "ruby": {
+    "status": "env-only",
+    "gem": "owlpane (RubyGems — not published yet)",
+    "env": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+      "OWLPANE_INGEST_KEY=owl_ing_…",
+      "OTEL_SERVICE_NAME=my-service"
+    ]
   }
 }

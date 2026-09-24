@@ -182,11 +182,18 @@ def resolve_config_from_env() -> Optional[Config]:
   write(path.join(pyPkg, "_generated_config.py"), content);
 }
 
+function readReleaseVersion(): string {
+  const nodePkg = path.join(root, "packages", "node", "package.json");
+  return JSON.parse(fs.readFileSync(nodePkg, "utf8")).version as string;
+}
+
 function generateInstallSnippets(): void {
+  const v = readReleaseVersion();
   const snippets = {
     version: 1,
     go: {
-      module: "github.com/owlpane/owlpane-go/owlpane",
+      module: "github.com/balaji-singh/owlpane-sdk/packages/go/owlpane",
+      goGet: `go get github.com/balaji-singh/owlpane-sdk/packages/go@v${v}`,
       env: [
         "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
         "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
@@ -194,7 +201,7 @@ function generateInstallSnippets(): void {
         "OTEL_SERVICE_NAME=my-service",
         "OWLPANE_ENVIRONMENT=production",
       ],
-      code: `import "github.com/owlpane/owlpane-go/owlpane"
+      code: `import "github.com/balaji-singh/owlpane-sdk/packages/go/owlpane"
 
 shutdown, err := owlpane.Start(context.Background(), nil)
 // … app …
@@ -202,7 +209,7 @@ _ = shutdown(context.Background())`,
     },
     python: {
       package: "owlpane",
-      pip: "pip install -e packages/python",
+      pip: `pip install owlpane==${v}`,
       env: [
         "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
         "OWLPANE_INGEST_KEY=owl_ing_…",
@@ -212,7 +219,32 @@ _ = shutdown(context.Background())`,
     },
     node: {
       package: "@owlpane/node",
+      npm: `npm install @owlpane/node@${v}`,
       note: "Hand-written full SDK in packages/node",
+    },
+    browser: {
+      package: "@owlpane/browser",
+      npm: `npm install @owlpane/browser@${v}`,
+    },
+    java: {
+      status: "env-only",
+      maven: "com.owlpane:owlpane-java (thin starter — not on Maven Central yet)",
+      env: [
+        "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+        "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
+        "OWLPANE_INGEST_KEY=owl_ing_…",
+        "OTEL_SERVICE_NAME=my-service",
+      ],
+      note: "Use OpenTelemetry Java agent + env; owlpane-java library ships in a later release.",
+    },
+    ruby: {
+      status: "env-only",
+      gem: "owlpane (RubyGems — not published yet)",
+      env: [
+        "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+        "OWLPANE_INGEST_KEY=owl_ing_…",
+        "OTEL_SERVICE_NAME=my-service",
+      ],
     },
   };
   write(
