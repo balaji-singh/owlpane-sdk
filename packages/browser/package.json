@@ -1,0 +1,38 @@
+{
+  "name": "@owlpane/browser",
+  "version": "0.1.0",
+  "description": "Owlpane real-user-monitoring SDK for browsers: page load, Web Vitals, JS errors, fetch/XHR spans, optional rrweb DOM replay, and W3C trace propagation over OTLP/HTTP JSON.",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:iife": "esbuild src/index.ts --bundle --format=iife --global-name=OwlpaneBrowser --target=es2020 --minify --outfile=dist/owlpane-browser.iife.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --import tsx $(ls test/*.test.ts)"
+  },
+  "dependencies": {
+    "rrweb": "^2.0.0-alpha.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "owlpane-sdk",
+  "private": true,
+  "description": "Owlpane customer SDKs (@owlpane/node, @owlpane/browser)",
+  "workspaces": ["packages/node", "packages/browser"],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": { "node": ">=20.6" }
+}
