@@ -1,4 +1,24 @@
-# Plain OpenTelemetry samples
+# SDK examples
+
+## Console check (published packages + local ingest)
+
+After release, verify spans in the Owlpane console using **published** SDK artifacts (or monorepo sources with `OWLPANE_SDK_SOURCE=local`):
+
+| Sample | Package / JAR | Run |
+|--------|----------------|-----|
+| [`sdk-node`](sdk-node) | `@balaji-singh/owlpane-node` (GitHub Packages) | `./run-console.sh` |
+| [`sdk-go`](sdk-go) | `github.com/balaji-singh/owlpane-sdk/packages/go` | `./run-console.sh` |
+| [`sdk-python`](sdk-python) | `owlpane` (PyPI) | `./run-console.sh` |
+| [`sdk-java`](sdk-java) | OTel **javaagent** JAR + env | `./run-console.sh` |
+| [`pii-canary`](pii-canary) | full Node SDK (PII scrub test) | `./run.sh` |
+
+```bash
+cp .env.console.example .env   # ingest URL + owl_ing_ key from console
+chmod +x run-console.sh sdk-*/run-console.sh
+./run-console.sh               # all sdk-* samples
+```
+
+## Plain OpenTelemetry samples (CI / no Owlpane SDK)
 
 Tiny programs that emit one span using only the upstream OpenTelemetry SDK or agent, configured purely
 by environment variables as described in [docs/reference/opentelemetry-any-language.md](../docs/reference/opentelemetry-any-language.md).
