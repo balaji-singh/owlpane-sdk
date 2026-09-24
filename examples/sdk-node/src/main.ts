@@ -1,4 +1,4 @@
-import { job, owlpane, shutdown, isEnabled } from "@balaji-singh/owlpane-node";
+import { job, owlpane, shutdown, isEnabled } from "@owlpane/node";
 
 owlpane.start({
   service: process.env.OTEL_SERVICE_NAME,
