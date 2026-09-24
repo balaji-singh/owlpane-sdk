@@ -1,0 +1,4 @@
+# Install @balaji-singh/owlpane-node and owlpane-browser from GitHub Packages.
+# Use a PAT with read:packages (or GITHUB_TOKEN in CI for same org).
+@balaji-singh:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
