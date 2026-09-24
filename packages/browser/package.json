@@ -1,6 +1,6 @@
 {
   "name": "@owlpane/browser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Owlpane real-user-monitoring SDK for browsers: page load, Web Vitals, JS errors, fetch/XHR spans, optional rrweb DOM replay, and W3C trace propagation over OTLP/HTTP JSON.",
   "license": "MIT",
   "publishConfig": {

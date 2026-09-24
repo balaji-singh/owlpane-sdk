@@ -2,11 +2,20 @@
   "name": "owlpane-sdk",
   "private": true,
   "description": "Owlpane customer SDKs (@owlpane/node, @owlpane/browser)",
-  "workspaces": ["packages/node", "packages/browser"],
+  "workspaces": ["packages/node", "packages/browser", "codegen"],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
+    "codegen": "tsx codegen/generate.ts",
+    "schema:validate": "node scripts/validate-schema.mjs",
+    "verify:generated": "bash scripts/verify-generated.sh",
+    "build": "npm run codegen && npm run build --workspaces --if-present",
+    "test": "npm run schema:validate && npm run test -w @owlpane/codegen && npm run test --workspaces --if-present && npm run test:go && npm run test:python",
+    "test:go": "cd packages/go && go test ./... && bash scripts/conformance.sh",
+    "test:python": "cd packages/python && (test -d .venv || python3 -m venv .venv) && .venv/bin/pip install -q -e '.[dev]' && .venv/bin/python -m pytest -q && bash scripts/conformance.sh",
     "lint": "npm run lint --workspaces --if-present"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "tsx": "^4.20.6"
   },
   "engines": { "node": ">=20.6" }
 }

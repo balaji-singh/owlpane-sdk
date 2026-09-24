@@ -1,4 +1,7 @@
 node_modules/
+packages/python/.venv/
+packages/python/**/__pycache__/
+packages/python/**/*.egg-info/
 dist/
 .env
 *.log

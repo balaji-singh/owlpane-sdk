@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "go": {
+    "module": "github.com/owlpane/owlpane-go/owlpane",
+    "env": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+      "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
+      "OWLPANE_INGEST_KEY=owl_ing_…",
+      "OTEL_SERVICE_NAME=my-service",
+      "OWLPANE_ENVIRONMENT=production"
+    ],
+    "code": "import \"github.com/owlpane/owlpane-go/owlpane\"\n\nshutdown, err := owlpane.Start(context.Background(), nil)\n// … app …\n_ = shutdown(context.Background())"
+  },
+  "python": {
+    "package": "owlpane",
+    "pip": "pip install -e packages/python",
+    "env": [
+      "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
+      "OWLPANE_INGEST_KEY=owl_ing_…",
+      "OTEL_SERVICE_NAME=my-service",
+      "OWLPANE_ENVIRONMENT=production"
+    ]
+  },
+  "node": {
+    "package": "@owlpane/node",
+    "note": "Hand-written full SDK in packages/node"
+  }
+}

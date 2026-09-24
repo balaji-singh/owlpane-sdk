@@ -18,9 +18,15 @@ jobs:
         with: { persist-credentials: false }
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with: { node-version: 20, registry-url: "https://registry.npmjs.org", cache: npm }
+      - uses: actions/setup-go@40dc10b7c7242e9380a2d47b2d122ca7de6ce705
+        with: { go-version: "1.22" }
+      - uses: actions/setup-python@83679a5e3609a35f106002455637dd34821c6e99
+        with: { python-version: "3.12" }
       - run: npm ci
-      - run: npm run build -w @owlpane/node -w @owlpane/browser
-      - run: npm test -w @owlpane/node -w @owlpane/browser
+      - run: npm run codegen
+      - run: git diff --exit-code packages/go/owlpane/zz_generated_env.go packages/python/owlpane/_generated_config.py schema/install-snippets.json
+      - run: npm run build
+      - run: npm test
       - name: Refuse to publish a version that does not match the tag
         run: |
           set -euo pipefail

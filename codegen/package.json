@@ -1,0 +1,13 @@
+{
+  "name": "@owlpane/codegen",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx generate.ts",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

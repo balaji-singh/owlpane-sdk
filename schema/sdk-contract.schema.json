@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://owlpane.com/schema/sdk-contract.json",
+  "title": "OwlpaneSdkContract",
+  "description": "Language-neutral contract for Owlpane customer SDKs. Hand-written packages (node, browser) and generated thin starters must conform to this schema.",
+  "type": "object",
+  "properties": {
+    "version": { "const": "1" },
+    "otlp": {
+      "type": "object",
+      "properties": {
+        "paths": {
+          "type": "object",
+          "properties": {
+            "traces": { "const": "/v1/traces" },
+            "logs": { "const": "/v1/logs" },
+            "metrics": { "const": "/v1/metrics" }
+          },
+          "required": ["traces", "logs", "metrics"]
+        },
+        "authHeader": { "const": "Authorization" },
+        "authScheme": { "const": "Bearer" },
+        "ingestKeyPattern": { "const": "^owl_ing_[0-9a-f]{48}$" }
+      },
+      "required": ["paths", "authHeader", "authScheme"]
+    },
+    "initOptions": {
+      "type": "object",
+      "description": "Portable bootstrap options (server-side SDKs). Browser uses a superset in browser-init.schema.json.",
+      "properties": {
+        "service": {
+          "type": "string",
+          "description": "Maps to service.name",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "OTLP HTTP base URL (no trailing path)",
+          "format": "uri"
+        },
+        "ingestKey": {
+          "type": "string",
+          "description": "Project ingest key; never log or persist in source control"
+        },
+        "environment": {
+          "type": "string",
+          "description": "deployment.environment.name",
+          "default": "development"
+        },
+        "release": {
+          "type": "string",
+          "description": "service.version"
+        },
+        "sampleRatio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "resourceAttributes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "disableInstrumentations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "traceUserProfile": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, setUser may record enduser.email / enduser.name"
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "description": "Canonical environment variable names and precedence (options override env).",
+      "properties": {
+        "endpoint": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["OTEL_EXPORTER_OTLP_ENDPOINT", "OWLPANE_INGEST_URL"]
+        },
+        "ingestKey": { "const": "OWLPANE_INGEST_KEY" },
+        "serviceName": { "const": "OTEL_SERVICE_NAME" },
+        "environment": { "const": "OWLPANE_ENVIRONMENT" },
+        "release": { "const": "OWLPANE_RELEASE" },
+        "disabled": { "const": "OTEL_SDK_DISABLED" },
+        "traceUserProfile": { "const": "OWLPANE_TRACE_USER_PROFILE" },
+        "metricsExportIntervalMs": { "const": "OWLPANE_METRICS_EXPORT_INTERVAL_MS" }
+      }
+    },
+    "portableApi": {
+      "type": "object",
+      "description": "APIs that generated starters should expose with identical semantics.",
+      "properties": {
+        "start": { "description": "No-op when endpoint unset or OTEL_SDK_DISABLED=true" },
+        "shutdown": { "description": "Flush exporters" },
+        "job": {
+          "description": "Root span + job.duration histogram; kinds: cron|interval|timeout|queue|task"
+        },
+        "setUser": { "description": "enduser.id on active span; profile fields gated by traceUserProfile" },
+        "isEnabled": { "description": "Whether start() activated export" }
+      }
+    },
+    "packageTiers": {
+      "type": "object",
+      "properties": {
+        "full": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["node", "browser"]
+        },
+        "thin": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["go", "java", "python", "ruby", "dotnet"]
+        }
+      }
+    }
+  },
+  "required": ["version", "otlp", "initOptions", "env", "portableApi", "packageTiers"]
+}
