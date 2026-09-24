@@ -9,7 +9,7 @@ In the console, create **five projects** (names must match `dogfood.manifest.jso
 | Console project | Example app | Package / path |
 |-----------------|-------------|----------------|
 | `owlpane-sdk-node` | [`apps/node`](apps/node) | `@balaji-singh/owlpane-node@0.1.2` (GitHub Packages npm) |
-| `owlpane-sdk-go` | [`apps/go`](apps/go) | `github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.1` |
+| `owlpane-sdk-go` | [`apps/go`](apps/go) | `github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.2` |
 | `owlpane-sdk-python` | [`apps/python`](apps/python) | `owlpane==0.1.2` (PyPI) |
 | `owlpane-sdk-java` | [`apps/java`](apps/java) | OpenTelemetry **javaagent** + `OTEL_*` env |
 | `owlpane-sdk-ruby` | [`apps/ruby`](apps/ruby) | `opentelemetry-sdk` + OTLP exporter |
