@@ -108,24 +108,22 @@ jobs:
           OWNER="${GITHUB_REPOSITORY%%/*}"
           VERSION="$(node -p "require('./packages/node/package.json').version")"
           TAG="sdk-v${VERSION}"
-          BODY="$(cat <<EOF
-## Install (v${VERSION})
-
-Packages for this repo appear under **Packages** on GitHub (not npmjs.com).
-
-| Language | Install |
-|----------|---------|
-| Node | \`npm install @${OWNER}/owlpane-node@${VERSION}\` from \`npm.pkg.github.com\` (see README .npmrc) |
-| Browser | \`npm install @${OWNER}/owlpane-browser@${VERSION}\` |
-| Python | \`pip install owlpane==${VERSION}\` (PyPI, when \`PYPI_API_TOKEN\` is configured) |
-| Go | \`go get github.com/balaji-singh/owlpane-sdk/packages/go@v${VERSION}\` |
-| Java / Ruby / .NET | Env + OTel agent — \`schema/install-snippets.json\` |
-
-Monorepo source names remain \`@owlpane/node\` and \`@owlpane/browser\`; registry names use \`@${OWNER}/owlpane-*\` for GitHub Packages scope rules.
-EOF
-)"
+          NOTES_FILE="$(mktemp)"
+          {
+            echo "## Install (v${VERSION})"
+            echo ""
+            echo "Packages for this repo appear under **Packages** on GitHub (not npmjs.com)."
+            echo ""
+            echo "| Language | Install |"
+            echo "|----------|---------|"
+            echo "| Node | npm install @${OWNER}/owlpane-node@${VERSION} (npm.pkg.github.com) |"
+            echo "| Browser | npm install @${OWNER}/owlpane-browser@${VERSION} |"
+            echo "| Python | pip install owlpane==${VERSION} (optional PyPI) |"
+            echo "| Go | go get github.com/balaji-singh/owlpane-sdk/packages/go@v${VERSION} |"
+            echo "| Java / Ruby / .NET | schema/install-snippets.json |"
+          } > "${NOTES_FILE}"
           if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --notes "${BODY}"
+            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file "${NOTES_FILE}"
           else
-            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "SDK v${VERSION}" --notes "${BODY}"
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "SDK v${VERSION}" --notes-file "${NOTES_FILE}"
           fi
