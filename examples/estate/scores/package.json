@@ -1,0 +1,1 @@
+{ "name": "estate-scores", "private": true, "dependencies": { "pg": "^8.20.0" } }

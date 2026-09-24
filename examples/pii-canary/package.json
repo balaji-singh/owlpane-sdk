@@ -1,0 +1,17 @@
+{
+  "name": "owlpane-pii-canary",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --import tsx src/main.ts",
+    "emit": "curl -s -X POST http://127.0.0.1:5199/emit"
+  },
+  "dependencies": {
+    "@owlpane/node": "file:../../packages/node"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
