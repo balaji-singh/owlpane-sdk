@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "Owlpane real-user-monitoring SDK for browsers: page load, Web Vitals, JS errors, fetch/XHR spans, optional rrweb DOM replay, and W3C trace propagation over OTLP/HTTP JSON.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balaji-singh/owlpane-sdk.git",
+    "directory": "packages/browser"
+  },
   "publishConfig": {
     "access": "public"
   },

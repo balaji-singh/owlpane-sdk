@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "Owlpane telemetry SDK for Node.js: one-line OpenTelemetry setup, job tracing, and user tagging. Optional NestJS helpers at @owlpane/node/nest.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/balaji-singh/owlpane-sdk.git",
+    "directory": "packages/node"
+  },
   "publishConfig": {
     "access": "public"
   },
