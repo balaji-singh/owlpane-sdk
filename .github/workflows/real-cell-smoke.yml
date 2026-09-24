@@ -1,0 +1,18 @@
+name: Real cell smoke
+on:
+  workflow_dispatch:
+    inputs:
+      ingest_url:
+        description: Ingest base URL
+        required: true
+        type: string
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: POST one span
+        env:
+          OWLPANE_INGEST_URL: ${{ inputs.ingest_url }}
+          OWLPANE_INGEST_KEY: ${{ secrets.OWLPANE_INGEST_KEY }}
+        run: bash scripts/real-cell-smoke.sh
