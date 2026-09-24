@@ -4,24 +4,24 @@
  */
 import { trace, SpanStatusCode, type Attributes, type Span } from "@opentelemetry/api";
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
-import {
-  ATTR_FEATURE_FLAG_KEY,
-  ATTR_FEATURE_FLAG_RESULT_VARIANT,
-  ATTR_OS_NAME,
-  ATTR_OS_TYPE,
-  ATTR_TEST_CASE_NAME,
-  ATTR_TEST_CASE_RESULT_STATUS,
-  ATTR_TEST_SUITE_NAME,
-  ATTR_CICD_PIPELINE_NAME,
-  ATTR_CICD_PIPELINE_RESULT,
-  ATTR_VCS_REPOSITORY_URL_FULL,
-  CICD_PIPELINE_RESULT_VALUE_FAILURE,
-  CICD_PIPELINE_RESULT_VALUE_SUCCESS,
-  OS_TYPE_VALUE_DARWIN,
-  OS_TYPE_VALUE_LINUX,
-  TEST_CASE_RESULT_STATUS_VALUE_FAIL,
-  TEST_CASE_RESULT_STATUS_VALUE_PASS,
-} from "@opentelemetry/semantic-conventions/incubating";
+
+/** OpenTelemetry semantic convention names. Inlined because this package's tsconfig resolves modules as "node", which cannot load the incubating export. */
+const ATTR_FEATURE_FLAG_KEY = "feature_flag.key";
+const ATTR_FEATURE_FLAG_RESULT_VARIANT = "feature_flag.result.variant";
+const ATTR_OS_NAME = "os.name";
+const ATTR_OS_TYPE = "os.type";
+const ATTR_TEST_CASE_NAME = "test.case.name";
+const ATTR_TEST_CASE_RESULT_STATUS = "test.case.result.status";
+const ATTR_TEST_SUITE_NAME = "test.suite.name";
+const ATTR_CICD_PIPELINE_NAME = "cicd.pipeline.name";
+const ATTR_CICD_PIPELINE_RESULT = "cicd.pipeline.result";
+const ATTR_VCS_REPOSITORY_URL_FULL = "vcs.repository.url.full";
+const CICD_PIPELINE_RESULT_VALUE_FAILURE = "failure";
+const CICD_PIPELINE_RESULT_VALUE_SUCCESS = "success";
+const OS_TYPE_VALUE_DARWIN = "darwin";
+const OS_TYPE_VALUE_LINUX = "linux";
+const TEST_CASE_RESULT_STATUS_VALUE_FAIL = "fail";
+const TEST_CASE_RESULT_STATUS_VALUE_PASS = "pass";
 
 export const EXPERIMENT_ID = "owlpane.experiment.id";
 export const EXPERIMENT_VARIANT = "owlpane.experiment.variant";
