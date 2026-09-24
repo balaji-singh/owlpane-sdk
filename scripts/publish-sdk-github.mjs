@@ -34,7 +34,7 @@ function publishOne(workspace, publishName) {
     name: publishName,
     repository: {
       type: "git",
-      url: `git+https://github.com/${owner}/owlpane.git`,
+      url: `git+https://github.com/${owner}/owlpane-sdk.git`,
       directory: workspace,
     },
     publishConfig: { registry: "https://npm.pkg.github.com" },

@@ -6,7 +6,7 @@ on:
   push:
     tags: ["sdk-v*"]
 permissions:
-  contents: read
+  contents: write
   packages: write
   id-token: write   # provenance attestation (npmjs.com)
 jobs:
