@@ -34,23 +34,21 @@ jobs:
           browser_version="$(node -p "require('./packages/browser/package.json').version")"
           test "$node_version" = "$browser_version"
           test "sdk-v${node_version}" = "${GITHUB_REF_NAME}"
-      - name: Publish SDKs (GitHub Packages or npmjs.com)
+      - name: Require NPM_TOKEN (npmjs.com publish)
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "${NPM_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN is not set on this repository."
+            echo "Add an npm automation token at Settings → Secrets → Actions → NPM_TOKEN,"
+            echo "then re-run this workflow or push tag sdk-v<version> again."
+            echo "GitHub Packages fallback was removed: GITHUB_TOKEN often lacks write_package (403)."
+            exit 1
+          fi
+      - name: Publish @owlpane/node and @owlpane/browser to npmjs.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          npmrc="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          if [ -n "${NPM_TOKEN}" ]; then
-            export NODE_AUTH_TOKEN="${NPM_TOKEN}"
-            npm publish -w @owlpane/node --provenance --access public
-            npm publish -w @owlpane/browser --provenance --access public
-          else
-            {
-              echo "@balaji-singh:registry=https://npm.pkg.github.com"
-              echo "//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}"
-            } >> "${npmrc}"
-            export NODE_AUTH_TOKEN="${GITHUB_TOKEN}"
-            export NPM_CONFIG_REGISTRY=https://npm.pkg.github.com
-            node scripts/publish-sdk-github.mjs
-          fi
+          npm publish -w @owlpane/node --provenance --access public
+          npm publish -w @owlpane/browser --provenance --access public
