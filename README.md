@@ -11,7 +11,9 @@ Customer-facing packages:
 **Multi-language design:** [docs/MULTILANGUAGE-SDK-ARCHITECTURE.md](docs/MULTILANGUAGE-SDK-ARCHITECTURE.md)  
 **Contract (codegen source of truth):** [schema/sdk-contract.schema.json](schema/sdk-contract.schema.json)
 
-**Release (`sdk-v*` tag):** publishes **GitHub Packages** (npm: `@balaji-singh/owlpane-node`, `@balaji-singh/owlpane-browser`), tags **Go** (`packages/go/v*`), and optionally **PyPI** (`owlpane` if `PYPI_API_TOKEN` is set). No npmjs.com — packages show under this repo’s **Packages** tab. See [docs/github-packages-npmrc.example](docs/github-packages-npmrc.example).
+**Release (`sdk-v*` tag):** publishes **GitHub Packages** (npm: `@balaji-singh/owlpane-node`, `@balaji-singh/owlpane-browser`), tags **Go** (`packages/go/v*`), and optionally **PyPI** (`owlpane` if `PYPI_API_TOKEN` is set). Not npmjs.com — artifacts show under this repo’s **Packages** tab. See [docs/github-packages-npmrc.example](docs/github-packages-npmrc.example).
+
+**Publish auth:** enable **Settings → Actions → Workflow permissions → Read and write**, or add repo secret `GH_PACKAGES_TOKEN` (PAT with `write:packages`).
 
 Source in the monorepo stays `@owlpane/node` / `@owlpane/browser`; the registry scope must match the GitHub owner (`@balaji-singh/…`). Java / Ruby / .NET are not on a registry yet.
 

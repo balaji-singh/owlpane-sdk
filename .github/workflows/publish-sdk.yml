@@ -5,7 +5,8 @@ name: Publish SDK
 #   Python: PyPI (optional; needs PYPI_API_TOKEN)
 # Java / Ruby / .NET: not on a registry yet (env-only in schema/install-snippets.json).
 #
-# No NPM_TOKEN: uses GITHUB_TOKEN (packages: write). Connect apps with a .npmrc pointing at npm.pkg.github.com.
+# Auth: GH_PACKAGES_TOKEN (PAT with write:packages) or GITHUB_TOKEN if repo Settings → Actions
+# allows workflow read/write + package publish. Consumers use .npmrc → npm.pkg.github.com.
 on:
   push:
     tags: ["sdk-v*"]
@@ -46,10 +47,16 @@ jobs:
         run: node scripts/verify-versions.mjs
       - name: Publish Node and Browser to GitHub Packages
         env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
+          if [ -n "${GH_PACKAGES_TOKEN}" ]; then
+            export NODE_AUTH_TOKEN="${GH_PACKAGES_TOKEN}"
+          else
+            export NODE_AUTH_TOKEN="${GITHUB_TOKEN}"
+          fi
           OWNER="${GITHUB_REPOSITORY%%/*}"
           VERSION="$(node -p "require('./packages/node/package.json').version")"
           REGISTRY="https://npm.pkg.github.com"
@@ -65,7 +72,12 @@ jobs:
             (
               cd "${dir}"
               npm pkg set "name=${gh_name}" "publishConfig.registry=${REGISTRY}"
-              npm publish --access public
+              if ! npm publish --access public; then
+                echo "::error::GitHub Packages publish failed (403 write_package?)."
+                echo "Fix: repo Settings → Actions → Workflow permissions → Read and write,"
+                echo "or add secret GH_PACKAGES_TOKEN (classic PAT with write:packages + repo)."
+                exit 1
+              fi
             )
             echo "Published ${gh_name}@${VERSION} → ${REGISTRY}"
           }
