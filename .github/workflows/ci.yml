@@ -18,5 +18,11 @@ jobs:
         with: { python-version: "3.12" }
       - run: git diff --exit-code packages/go/owlpane/zz_generated_env.go packages/python/owlpane/_generated_config.py schema/install-snippets.json
       - run: node scripts/verify-versions.mjs
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17", cache: maven }
+      - uses: ruby/setup-ruby@v1
+        with: { ruby-version: "3.3", bundler-cache: false }
+      - run: mvn -q -f packages/java/pom.xml test
+      - run: ruby -e "require './packages/ruby/lib/owlpane'; abort unless Owlpane::VERSION"
       - run: npm test
       - run: npm run build

@@ -26,10 +26,27 @@ if (!pyV) {
   process.exit(1);
 }
 
+const javaPom = fs.readFileSync(
+  path.join(root, "packages/java/pom.xml"),
+  "utf8",
+);
+const javaMatch = javaPom.match(
+  /<artifactId>owlpane-java<\/artifactId>\s*\n\s*<version>([^<]+)<\/version>/,
+);
+const javaV = javaMatch?.[1];
+const rubyVer = fs.readFileSync(
+  path.join(root, "packages/ruby/lib/owlpane/version.rb"),
+  "utf8",
+);
+const rubyMatch = rubyVer.match(/VERSION = "([^"]+)"/);
+const rubyV = rubyMatch?.[1];
+
 const expected = nodeV;
 const mismatches = [];
 if (browserV !== expected) mismatches.push(`browser=${browserV}`);
 if (pyV !== expected) mismatches.push(`python=${pyV}`);
+if (javaV !== expected) mismatches.push(`java=${javaV}`);
+if (rubyV !== expected) mismatches.push(`ruby=${rubyV}`);
 
 if (mismatches.length) {
   console.error(
@@ -46,4 +63,6 @@ if (refName.startsWith("sdk-v")) {
   }
 }
 
-console.log(`release version ${expected} (node, browser, python aligned)`);
+console.log(
+  `release version ${expected} (node, browser, python, java, ruby aligned)`,
+);

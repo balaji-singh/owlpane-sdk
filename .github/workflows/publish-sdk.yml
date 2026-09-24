@@ -1,6 +1,13 @@
 name: Publish SDK
-# GitHub Packages (npm): @balaji-singh/owlpane-node, @balaji-singh/owlpane-browser
-# Go: tag packages/go/v* | Python: PyPI if PYPI_API_TOKEN | Java/Ruby: not yet
+# Publishes ALL shipped languages on sdk-v*:
+#   Node/Browser → GitHub Packages npm (@balaji-singh/owlpane-*)
+#   Python → PyPI (PYPI_API_TOKEN) + wheel on GitHub Release
+#   Go → git tag packages/go/v*
+#   Java → GitHub Packages Maven (com.owlpane:owlpane-java)
+#   Ruby → GitHub Packages RubyGems (owlpane)
+#
+# Secret GH_PACKAGES_TOKEN: classic PAT with write:packages + repo (required if GITHUB_TOKEN cannot publish).
+# Optional: PYPI_API_TOKEN for pypi.org.
 on:
   push:
     tags: ["sdk-v*"]
@@ -11,15 +18,16 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
           persist-credentials: true
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
         with:
@@ -33,6 +41,15 @@ jobs:
           cache-dependency-path: packages/go/go.sum
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: false
       - run: npm ci
       - run: npm run codegen
       - run: git diff --exit-code packages/go/owlpane/zz_generated_env.go packages/python/owlpane/_generated_config.py schema/install-snippets.json
@@ -42,90 +59,10 @@ jobs:
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         run: node scripts/verify-versions.mjs
-      - name: Push Go module semver tag
-        run: |
-          set -euo pipefail
-          VERSION="$(node -p "require('./packages/node/package.json').version")"
-          GO_TAG="packages/go/v${VERSION}"
-          if git rev-parse "${GO_TAG}" >/dev/null 2>&1; then
-            echo "Go tag ${GO_TAG} already exists; skipping"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "${GO_TAG}" -m "Go module release v${VERSION}"
-          git push origin "${GO_TAG}"
-      - name: Publish owlpane to PyPI
-        if: env.PYPI_API_TOKEN != ''
-        run: |
-          set -euo pipefail
-          python -m pip install --upgrade pip build twine
-          cd packages/python
-          python -m build
-          twine upload dist/* --non-interactive --skip-existing \
-            -u __token__ -p "${PYPI_API_TOKEN}"
-      - name: PyPI skipped (no PYPI_API_TOKEN)
-        if: env.PYPI_API_TOKEN == ''
-        run: 'echo "::warning::PYPI_API_TOKEN not set — skipping pypi.org upload."'
-      - name: Publish Node and Browser to GitHub Packages
-        id: gh_packages_npm
-        continue-on-error: true
+      - name: Publish all languages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          OWNER="${GITHUB_REPOSITORY%%/*}"
-          VERSION="$(node -p "require('./packages/node/package.json').version")"
-          REGISTRY="https://npm.pkg.github.com"
-          echo "@${OWNER}:registry=${REGISTRY}" >> "${HOME}/.npmrc"
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> "${HOME}/.npmrc"
-
-          publish_gh_pkg() {
-            local dir="$1"
-            local gh_name="$2"
-            if npm view "${gh_name}@${VERSION}" version --registry "${REGISTRY}" >/dev/null 2>&1; then
-              echo "${gh_name}@${VERSION} already on GitHub Packages; skipping"
-              return 0
-            fi
-            (
-              cd "${dir}"
-              npm pkg set "name=${gh_name}" "publishConfig.registry=${REGISTRY}"
-              npm publish --access public
-            )
-            echo "Published ${gh_name}@${VERSION}"
-          }
-
-          publish_gh_pkg packages/node "@${OWNER}/owlpane-node"
-          publish_gh_pkg packages/browser "@${OWNER}/owlpane-browser"
-      - name: Update GitHub release notes (install matrix)
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          OWNER="${GITHUB_REPOSITORY%%/*}"
-          VERSION="$(node -p "require('./packages/node/package.json').version")"
-          TAG="sdk-v${VERSION}"
-          NOTES_FILE="$(mktemp)"
-          {
-            echo "## Install (v${VERSION})"
-            echo ""
-            echo "| Language | Install |"
-            echo "|----------|---------|"
-            echo "| Node | npm install @${OWNER}/owlpane-node@${VERSION} |"
-            echo "| Browser | npm install @${OWNER}/owlpane-browser@${VERSION} |"
-            echo "| Python | pip install owlpane==${VERSION} |"
-            echo "| Go | go get github.com/balaji-singh/owlpane-sdk/packages/go@v${VERSION} |"
-          } > "${NOTES_FILE}"
-          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --notes-file "${NOTES_FILE}"
-          else
-            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "SDK v${VERSION}" --notes-file "${NOTES_FILE}"
-          fi
-      - name: GitHub Packages npm status
-        if: steps.gh_packages_npm.outcome == 'failure'
-        run: |
-          echo "::error::Node/Browser not on GitHub Packages. Set GH_PACKAGES_TOKEN (classic PAT with write:packages + repo)."
-          exit 1
+          PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: bash scripts/publish-all-registries.sh
