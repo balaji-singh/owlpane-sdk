@@ -69,6 +69,7 @@ jobs:
         run: 'echo "::warning::PYPI_API_TOKEN not set — skipping pypi.org upload."'
       - name: Publish Node and Browser to GitHub Packages
         id: gh_packages_npm
+        continue-on-error: true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -97,6 +98,11 @@ jobs:
 
           publish_gh_pkg packages/node "@${OWNER}/owlpane-node"
           publish_gh_pkg packages/browser "@${OWNER}/owlpane-browser"
+      - name: Require GitHub Packages npm (or GH_PACKAGES_TOKEN)
+        if: steps.gh_packages_npm.outcome == 'failure'
+        run: |
+          echo "::error::Node/Browser not on GitHub Packages. Add repo secret GH_PACKAGES_TOKEN (classic PAT: write:packages + repo)."
+          exit 1
       - name: Update GitHub release notes (install matrix)
         env:
           GH_TOKEN: ${{ github.token }}
