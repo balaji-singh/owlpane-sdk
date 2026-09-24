@@ -98,12 +98,8 @@ jobs:
 
           publish_gh_pkg packages/node "@${OWNER}/owlpane-node"
           publish_gh_pkg packages/browser "@${OWNER}/owlpane-browser"
-      - name: Require GitHub Packages npm (or GH_PACKAGES_TOKEN)
-        if: steps.gh_packages_npm.outcome == 'failure'
-        run: |
-          echo "::error::Node/Browser not on GitHub Packages. Add repo secret GH_PACKAGES_TOKEN (classic PAT: write:packages + repo)."
-          exit 1
       - name: Update GitHub release notes (install matrix)
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -128,3 +124,8 @@ jobs:
           else
             gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "SDK v${VERSION}" --notes-file "${NOTES_FILE}"
           fi
+      - name: GitHub Packages npm status
+        if: steps.gh_packages_npm.outcome == 'failure'
+        run: |
+          echo "::error::Node/Browser not on GitHub Packages. Set GH_PACKAGES_TOKEN (classic PAT with write:packages + repo)."
+          exit 1
