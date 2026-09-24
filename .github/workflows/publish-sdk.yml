@@ -59,8 +59,17 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          npm publish -w @owlpane/node --provenance --access public
-          npm publish -w @owlpane/browser --provenance --access public
+          VERSION="$(node -p "require('./packages/node/package.json').version")"
+          publish_ws() {
+            local pkg="$1"
+            if npm view "${pkg}@${VERSION}" version >/dev/null 2>&1; then
+              echo "${pkg}@${VERSION} already on npm; skipping"
+            else
+              npm publish -w "${pkg}" --provenance --access public
+            fi
+          }
+          publish_ws @owlpane/node
+          publish_ws @owlpane/browser
       - name: Publish owlpane to PyPI
         env:
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
