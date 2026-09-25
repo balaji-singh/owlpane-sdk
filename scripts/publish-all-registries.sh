@@ -9,6 +9,27 @@ TOKEN="${PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}"
 REGISTRY_NPMJS="https://registry.npmjs.org"
 FAILED=()
 
+npm_userconfig() {
+  # actions/setup-node sets NPM_CONFIG_USERCONFIG; appending only to ~/.npmrc is ignored in CI.
+  echo "${NPM_CONFIG_USERCONFIG:-${HOME}/.npmrc}"
+}
+
+ensure_npmjs_auth() {
+  local npmrc token
+  npmrc="$(npm_userconfig)"
+  token="${NODE_AUTH_TOKEN:-${NPM_TOKEN:-}}"
+  if [ -z "$token" ]; then
+    return 1
+  fi
+  mkdir -p "$(dirname "$npmrc")"
+  if ! grep -q '//registry.npmjs.org/:_authToken=' "$npmrc" 2>/dev/null; then
+    echo "//registry.npmjs.org/:_authToken=${token}" >> "$npmrc"
+  fi
+  if ! grep -q '@owlpane:registry=' "$npmrc" 2>/dev/null; then
+    echo '@owlpane:registry=https://registry.npmjs.org/' >> "$npmrc"
+  fi
+}
+
 publish_npmjs() {
   local dir="$1"
   local name
@@ -25,10 +46,18 @@ publish_npmjs() {
   echo "npmjs: published ${name}@${VERSION}"
 }
 
-if [ -n "${NPM_TOKEN:-}" ]; then
-  echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "${HOME}/.npmrc"
-  if ! publish_npmjs packages/node; then FAILED+=("npm-node"); fi
-  if ! publish_npmjs packages/browser; then FAILED+=("npm-browser"); fi
+if [ -n "${NODE_AUTH_TOKEN:-${NPM_TOKEN:-}}" ]; then
+  if ! ensure_npmjs_auth; then
+    echo "::error::npm auth config failed"
+    FAILED+=("npm-auth")
+  elif ! npm whoami --registry "${REGISTRY_NPMJS}" >/dev/null 2>&1; then
+    echo "::error::npm whoami failed — check NPM_TOKEN / NODE_AUTH_TOKEN (granular token needs publish on @owlpane/*)"
+    FAILED+=("npm-whoami")
+  else
+    echo "npmjs: authenticated as $(npm whoami --registry "${REGISTRY_NPMJS}")"
+    if ! publish_npmjs packages/node; then FAILED+=("npm-node"); fi
+    if ! publish_npmjs packages/browser; then FAILED+=("npm-browser"); fi
+  fi
 else
   echo "::error::NPM_TOKEN unset — cannot publish @owlpane/* to registry.npmjs.org"
   FAILED+=("npm-missing-token")
@@ -129,9 +158,9 @@ if [ -d dist/release-assets ] && compgen -G "dist/release-assets/*" > /dev/null;
 fi
 
 # npm is required for SaaS customers; other registries are best-effort on re-runs.
-if printf '%s\n' "${FAILED[@]}" | grep -q npm; then
+if [ "${#FAILED[@]}" -gt 0 ] && printf '%s\n' "${FAILED[@]}" | grep -qE 'npm'; then
   echo "::error::npm publish failed: ${FAILED[*]}"
-  echo "::error::Use an npm automation token for user balajiabgs (maintainer of @owlpane/*) in repo secret NPM_TOKEN"
+  echo "::error::npm publish/auth failed: ${FAILED[*]} (ensure repo secret NPM_TOKEN is set; CI must pass NODE_AUTH_TOKEN for setup-node)"
   exit 1
 fi
 if [ "${#FAILED[@]}" -gt 0 ]; then
