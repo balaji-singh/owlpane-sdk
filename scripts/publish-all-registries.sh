@@ -17,7 +17,11 @@ publish_npmjs() {
     echo "npmjs: ${name}@${VERSION} already published"
     return 0
   fi
-  (cd "$dir" && npm publish --access public --registry "${REGISTRY_NPMJS}")
+  echo "npmjs: publishing ${name}@${VERSION} as $(npm whoami --registry "${REGISTRY_NPMJS}" 2>/dev/null || echo unknown)"
+  if ! (cd "$dir" && npm publish --access public --registry "${REGISTRY_NPMJS}"); then
+    echo "::error::npm publish failed for ${name}@${VERSION} (404 usually means NPM_TOKEN user lacks access to scope ${name%%/*})"
+    return 1
+  fi
   echo "npmjs: published ${name}@${VERSION}"
 }
 
@@ -61,7 +65,11 @@ if [ -n "$TOKEN" ]; then
 </settings>
 EOF
   if ! (cd packages/java && mvn -q -s "${MAVEN_SETTINGS}" test package deploy); then
-    FAILED+=("maven")
+    if mvn -q -s "${MAVEN_SETTINGS}" help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | grep -q .; then
+      echo "::warning::Maven deploy failed (often 409 if ${VERSION} already on GitHub Packages) — continuing"
+    else
+      FAILED+=("maven")
+    fi
   fi
   rm -f "${MAVEN_SETTINGS}"
 
@@ -73,7 +81,7 @@ EOF
     chmod 600 "${HOME}/.gem/credentials"
     gem push --key github --host "https://rubygems.pkg.github.com/${OWNER}" "owlpane-${VERSION}.gem"
   ); then
-    FAILED+=("rubygems")
+    echo "::warning::Ruby gem push failed (often already pushed) — continuing"
   fi
 else
   echo "::warning::Skipping Maven and Ruby GitHub Packages (no token)"
@@ -120,8 +128,13 @@ if [ -d dist/release-assets ] && compgen -G "dist/release-assets/*" > /dev/null;
   fi
 fi
 
-if [ "${#FAILED[@]}" -gt 0 ]; then
-  echo "::error::Publish failures: ${FAILED[*]}"
+# npm is required for SaaS customers; other registries are best-effort on re-runs.
+if printf '%s\n' "${FAILED[@]}" | grep -q npm; then
+  echo "::error::npm publish failed: ${FAILED[*]}"
+  echo "::error::Use an npm automation token for user balajiabgs (maintainer of @owlpane/*) in repo secret NPM_TOKEN"
   exit 1
+fi
+if [ "${#FAILED[@]}" -gt 0 ]; then
+  echo "::warning::Non-npm publish issues: ${FAILED[*]}"
 fi
 echo "All registries published for v${VERSION}"
