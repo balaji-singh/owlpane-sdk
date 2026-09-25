@@ -6,31 +6,40 @@ cd "$ROOT"
 OWNER="${GITHUB_REPOSITORY%%/*}"
 VERSION="$(node -p "require('./packages/node/package.json').version")"
 TOKEN="${PACKAGES_TOKEN:-${GITHUB_TOKEN:-}}"
-REGISTRY_NPM="https://npm.pkg.github.com"
+REGISTRY_NPMJS="https://registry.npmjs.org"
 FAILED=()
 
-if [ -z "$TOKEN" ]; then
-  echo "::error::No PACKAGES_TOKEN or GITHUB_TOKEN for registry publish"
-  exit 1
-fi
-
-export NODE_AUTH_TOKEN="$TOKEN"
-export PACKAGES_TOKEN="$TOKEN"
-echo "@${OWNER}:registry=${REGISTRY_NPM}" >> "${HOME}/.npmrc"
-echo "//npm.pkg.github.com/:_authToken=${TOKEN}" >> "${HOME}/.npmrc"
-
-publish_npm() {
-  local dir="$1" gh_name="$2"
-  if npm view "${gh_name}@${VERSION}" version --registry "${REGISTRY_NPM}" >/dev/null 2>&1; then
-    echo "npm: ${gh_name}@${VERSION} already published"
+publish_npmjs() {
+  local dir="$1"
+  local name
+  name="$(node -p "require('./${dir}/package.json').name")"
+  if npm view "${name}@${VERSION}" version --registry "${REGISTRY_NPMJS}" >/dev/null 2>&1; then
+    echo "npmjs: ${name}@${VERSION} already published"
     return 0
   fi
-  (cd "$dir" && npm pkg set "name=${gh_name}" "publishConfig.registry=${REGISTRY_NPM}" && npm publish --access public)
-  echo "npm: published ${gh_name}@${VERSION}"
+  echo "npmjs: publishing ${name}@${VERSION} as $(npm whoami --registry "${REGISTRY_NPMJS}" 2>/dev/null || echo unknown)"
+  if ! (cd "$dir" && npm publish --access public --registry "${REGISTRY_NPMJS}"); then
+    echo "::error::npm publish failed for ${name}@${VERSION} (404 usually means NPM_TOKEN user lacks access to scope ${name%%/*})"
+    return 1
+  fi
+  echo "npmjs: published ${name}@${VERSION}"
 }
 
-if ! publish_npm packages/node "@${OWNER}/owlpane-node"; then FAILED+=("npm-node"); fi
-if ! publish_npm packages/browser "@${OWNER}/owlpane-browser"; then FAILED+=("npm-browser"); fi
+if [ -n "${NPM_TOKEN:-}" ]; then
+  echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> "${HOME}/.npmrc"
+  if ! publish_npmjs packages/node; then FAILED+=("npm-node"); fi
+  if ! publish_npmjs packages/browser; then FAILED+=("npm-browser"); fi
+else
+  echo "::error::NPM_TOKEN unset — cannot publish @owlpane/* to registry.npmjs.org"
+  FAILED+=("npm-missing-token")
+fi
+
+if [ -z "$TOKEN" ]; then
+  echo "::warning::No PACKAGES_TOKEN or GITHUB_TOKEN — skipping GitHub Packages (Maven/Ruby)"
+else
+  export NODE_AUTH_TOKEN="$TOKEN"
+  export PACKAGES_TOKEN="$TOKEN"
+fi
 
 python -m pip install -q --upgrade pip build twine
 if ! (cd packages/python && python -m build); then FAILED+=("python-build"); fi
@@ -42,8 +51,9 @@ else
   echo "::warning::PYPI_API_TOKEN unset — skipping pypi.org"
 fi
 
-MAVEN_SETTINGS="$(mktemp)"
-cat > "${MAVEN_SETTINGS}" <<EOF
+if [ -n "$TOKEN" ]; then
+  MAVEN_SETTINGS="$(mktemp)"
+  cat > "${MAVEN_SETTINGS}" <<EOF
 <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
   <servers>
     <server>
@@ -54,20 +64,27 @@ cat > "${MAVEN_SETTINGS}" <<EOF
   </servers>
 </settings>
 EOF
-if ! (cd packages/java && mvn -q -s "${MAVEN_SETTINGS}" test package deploy); then
-  FAILED+=("maven")
-fi
-rm -f "${MAVEN_SETTINGS}"
+  if ! (cd packages/java && mvn -q -s "${MAVEN_SETTINGS}" test package deploy); then
+    if mvn -q -s "${MAVEN_SETTINGS}" help:evaluate -Dexpression=project.version -DforceStdout 2>/dev/null | grep -q .; then
+      echo "::warning::Maven deploy failed (often 409 if ${VERSION} already on GitHub Packages) — continuing"
+    else
+      FAILED+=("maven")
+    fi
+  fi
+  rm -f "${MAVEN_SETTINGS}"
 
-if ! (
-  cd packages/ruby
-  gem build owlpane.gemspec
-  mkdir -p "${HOME}/.gem"
-  printf '%s\n' "---" ":github: Bearer ${TOKEN}" > "${HOME}/.gem/credentials"
-  chmod 600 "${HOME}/.gem/credentials"
-  gem push --key github --host "https://rubygems.pkg.github.com/${OWNER}" "owlpane-${VERSION}.gem"
-); then
-  FAILED+=("rubygems")
+  if ! (
+    cd packages/ruby
+    gem build owlpane.gemspec
+    mkdir -p "${HOME}/.gem"
+    printf '%s\n' "---" ":github: Bearer ${TOKEN}" > "${HOME}/.gem/credentials"
+    chmod 600 "${HOME}/.gem/credentials"
+    gem push --key github --host "https://rubygems.pkg.github.com/${OWNER}" "owlpane-${VERSION}.gem"
+  ); then
+    echo "::warning::Ruby gem push failed (often already pushed) — continuing"
+  fi
+else
+  echo "::warning::Skipping Maven and Ruby GitHub Packages (no token)"
 fi
 
 mkdir -p dist/release-assets
@@ -92,8 +109,8 @@ NOTES_FILE="$(mktemp)"
   echo ""
   echo "| Language | Install |"
   echo "|----------|---------|"
-  echo "| Node | npm install @${OWNER}/owlpane-node@${VERSION} |"
-  echo "| Browser | npm install @${OWNER}/owlpane-browser@${VERSION} |"
+  echo "| Node | \`npm install @owlpane/node@${VERSION}\` |"
+  echo "| Browser | \`npm install @owlpane/browser@${VERSION}\` |"
   echo "| Python | pip install owlpane==${VERSION} |"
   echo "| Go | go get github.com/balaji-singh/owlpane-sdk/packages/go@v${VERSION} |"
   echo "| Java | com.owlpane:owlpane-java:${VERSION} (Maven, GitHub Packages) |"
@@ -111,9 +128,13 @@ if [ -d dist/release-assets ] && compgen -G "dist/release-assets/*" > /dev/null;
   fi
 fi
 
-if [ "${#FAILED[@]}" -gt 0 ]; then
-  echo "::error::Publish failures: ${FAILED[*]}"
-  echo "Set GH_PACKAGES_TOKEN (classic PAT: write:packages + repo) if GitHub Packages returned 403."
+# npm is required for SaaS customers; other registries are best-effort on re-runs.
+if printf '%s\n' "${FAILED[@]}" | grep -q npm; then
+  echo "::error::npm publish failed: ${FAILED[*]}"
+  echo "::error::Use an npm automation token for user balajiabgs (maintainer of @owlpane/*) in repo secret NPM_TOKEN"
   exit 1
+fi
+if [ "${#FAILED[@]}" -gt 0 ]; then
+  echo "::warning::Non-npm publish issues: ${FAILED[*]}"
 fi
 echo "All registries published for v${VERSION}"

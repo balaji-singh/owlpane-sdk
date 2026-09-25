@@ -2,8 +2,8 @@
 
 Customer-facing packages:
 
-- `@owlpane/node` — `packages/node` (full)
-- `@owlpane/browser` — `packages/browser` (full)
+- `@owlpane/node` — `packages/node` (full) — **[npmjs.com](https://www.npmjs.com/package/@owlpane/node)**
+- `@owlpane/browser` — `packages/browser` (full) — **[npmjs.com](https://www.npmjs.com/package/@owlpane/browser)**
 - `github.com/balaji-singh/owlpane-sdk/packages/go` — `packages/go` (thin, generated env + hand OTel)
 - `owlpane` (PyPI-style) — `packages/python` (thin)
 - Java / Ruby / .NET — **planned** thin starters (see multi-language architecture)
@@ -15,15 +15,15 @@ Customer-facing packages:
 
 | Language | Registry |
 |----------|----------|
-| Node, Browser | GitHub Packages npm (`@balaji-singh/owlpane-*`) |
+| Node, Browser | **npmjs.com** (`@owlpane/node`, `@owlpane/browser`) — requires `NPM_TOKEN` |
 | Python | PyPI (`owlpane`) if `PYPI_API_TOKEN` + wheel on GitHub Release |
 | Go | Git tag `packages/go/v*` |
 | Java | GitHub Packages Maven (`com.owlpane:owlpane-java`) |
 | Ruby | GitHub Packages RubyGems (`owlpane`) |
 
-Secrets: **`GH_PACKAGES_TOKEN`** (classic PAT: `write:packages` + `repo`), optional **`PYPI_API_TOKEN`**. See [docs/github-packages-npmrc.example](docs/github-packages-npmrc.example).
+Customer install: `npm install @owlpane/node` — no GitHub token. See [docs/ops/sdk-install.md](docs/ops/sdk-install.md).
 
-Source in the monorepo stays `@owlpane/node` / `@owlpane/browser`; the registry scope must match the GitHub owner (`@balaji-singh/…`). Java / Ruby / .NET are not on a registry yet.
+Secrets: **`NPM_TOKEN`** (npm automation token for `@owlpane` scope), **`GH_PACKAGES_TOKEN`** (Java/Ruby on GitHub Packages), optional **`PYPI_API_TOKEN`**.
 
 See `.github/workflows/publish-sdk.yml`.
 

@@ -1,2 +1,1 @@
-@balaji-singh:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+# Deprecated — use public npm: npm install @owlpane/node
