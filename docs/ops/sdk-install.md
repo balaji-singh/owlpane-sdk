@@ -15,8 +15,8 @@ Published as `@balaji-singh/owlpane-node` and `@balaji-singh/owlpane-browser`. U
 ```json
 {
   "dependencies": {
-    "@owlpane/node": "npm:@balaji-singh/owlpane-node@0.1.2",
-    "@owlpane/browser": "npm:@balaji-singh/owlpane-browser@0.1.2"
+    "@owlpane/node": "npm:@balaji-singh/owlpane-node@0.1.3",
+    "@owlpane/browser": "npm:@balaji-singh/owlpane-browser@0.1.3"
   }
 }
 ```

@@ -2,7 +2,7 @@
   "version": 1,
   "go": {
     "module": "github.com/balaji-singh/owlpane-sdk/packages/go/owlpane",
-    "goGet": "go get github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.2",
+    "goGet": "go get github.com/balaji-singh/owlpane-sdk/packages/go@v0.1.3",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
       "OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf",
@@ -14,7 +14,7 @@
   },
   "python": {
     "package": "owlpane",
-    "pip": "pip install owlpane==0.1.2",
+    "pip": "pip install owlpane==0.1.3",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
       "OWLPANE_INGEST_KEY=owl_ing_…",
@@ -24,18 +24,18 @@
   },
   "node": {
     "package": "@balaji-singh/owlpane-node",
-    "npm": "npm install @balaji-singh/owlpane-node@0.1.2",
+    "npm": "npm install @balaji-singh/owlpane-node@0.1.3",
     "githubPackages": "https://npm.pkg.github.com",
     "note": "Hand-written full SDK; registry scope @balaji-singh on GitHub Packages."
   },
   "browser": {
     "package": "@balaji-singh/owlpane-browser",
-    "npm": "npm install @balaji-singh/owlpane-browser@0.1.2",
+    "npm": "npm install @balaji-singh/owlpane-browser@0.1.3",
     "githubPackages": "https://npm.pkg.github.com"
   },
   "java": {
     "package": "com.owlpane:owlpane-java",
-    "maven": "com.owlpane:owlpane-java:0.1.2",
+    "maven": "com.owlpane:owlpane-java:0.1.3",
     "githubPackages": "https://maven.pkg.github.com/balaji-singh/owlpane-sdk",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",
@@ -47,7 +47,7 @@
   },
   "ruby": {
     "package": "owlpane",
-    "gem": "gem install owlpane -v 0.1.2",
+    "gem": "gem install owlpane -v 0.1.3",
     "githubPackages": "https://rubygems.pkg.github.com/balaji-singh",
     "env": [
       "OTEL_EXPORTER_OTLP_ENDPOINT=https://ingest.example.com",

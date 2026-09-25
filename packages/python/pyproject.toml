@@ -1,6 +1,6 @@
 [project]
 name = "owlpane"
-version = "0.1.2"
+version = "0.1.3"
 description = "Thin OpenTelemetry bootstrap for Owlpane ingest"
 readme = "README.md"
 requires-python = ">=3.10"
