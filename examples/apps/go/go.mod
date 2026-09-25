@@ -3,7 +3,7 @@ module owlpane-dogfood-go
 go 1.22.0
 
 require (
-	github.com/balaji-singh/owlpane-sdk/packages/go v0.1.2
+	github.com/balaji-singh/owlpane-sdk/packages/go v0.1.3
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 )

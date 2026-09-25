@@ -2,7 +2,7 @@ import type { Env } from "./env.js";
 import { RandomBytes, defaultRandomBytes, newSpanId, newTraceId } from "./ids.js";
 import type { Attrs, SpanData, SpanEvent } from "./otlp.js";
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 
 export type ResolvedOptions = {
   endpoint: string;
