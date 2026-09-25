@@ -1,12 +1,13 @@
 name: Publish SDK
 # Publishes ALL shipped languages on sdk-v*:
-#   Node/Browser → GitHub Packages npm (@balaji-singh/owlpane-*)
+#   Node/Browser → npmjs.com (@owlpane/node, @owlpane/browser) — requires NPM_TOKEN
 #   Python → PyPI (PYPI_API_TOKEN) + wheel on GitHub Release
 #   Go → git tag packages/go/v*
 #   Java → GitHub Packages Maven (com.owlpane:owlpane-java)
 #   Ruby → GitHub Packages RubyGems (owlpane)
 #
-# Secret GH_PACKAGES_TOKEN: classic PAT with write:packages + repo (required if GITHUB_TOKEN cannot publish).
+# Secret NPM_TOKEN: automation token from npmjs.com with publish access to @owlpane scope.
+# Secret GH_PACKAGES_TOKEN: classic PAT with write:packages + repo (Java/Ruby on GitHub Packages).
 # Optional: PYPI_API_TOKEN for pypi.org.
 on:
   push:
@@ -20,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
     steps:
@@ -28,12 +30,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
-          scope: "@balaji-singh"
+          registry-url: https://registry.npmjs.org
+          scope: "@owlpane"
           cache: npm
       - uses: actions/setup-go@v5
         with:
@@ -63,6 +63,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: bash scripts/publish-all-registries.sh
